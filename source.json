@@ -1,10 +1,13 @@
 {
-  "name": "Example Tweaks",
-  "description": "A Folio source with two example packages in it. Change this file, keep the packages you want, and the build makes the index.",
+  "name": "Folio Community Tweaks",
+  "description": "The jailbreak-inspired tweaks for Folio: Cabinet, Harborline, Roll Call, Palette and Colored Albums. Each one is re-created from scratch for Folio and only switches on something Folio can already do.",
   "icon": "assets/icon.png",
-  "issuesUrl": "https://github.com/you/your-folio-source/issues",
+  "issuesUrl": "https://github.com/McCal-Codes/folio-tweaks/issues",
   "featured": [
-    { "package": "com.example.folio.midnight", "label": "New this week" }
+    {
+      "package": "com.mccal.folio.cabinet",
+      "label": "Swipe up on an icon"
+    }
   ],
   "maxAgeDays": 14
 }

@@ -1,95 +1,31 @@
-# A Folio source
+# Folio Community Tweaks
 
-A template for publishing tweaks, themes and layouts for [Folio](https://github.com/McCal-Codes/folio). Put as many
-packages in it as you like — one source holds up to 5,000 — push, and GitHub Pages serves a signed source that anyone
-can add to their phone.
+The jailbreak-inspired tweaks for [Folio](https://github.com/McCal-Codes/folio), published as a signed source.
+Folio includes this source from the start, so nobody has to add it by hand.
 
-There are two example packages here so you can see the shape of one: **Midnight**, a theme, and **Quiet Hours**, a
-tweak bundle. Delete them once yours work.
+| Tweak | Inspired by | What it does |
+|---|---|---|
+| **Cabinet** | Velox by Phillip Tennen | Swipe up on an app icon for a small panel with its shortcuts, latest notifications and music controls. |
+| **Harborline** | Harbor by Evan Swick | Dock icons swell under your finger as you slide along the dock. |
+| **Roll Call** | Axon by Nepeta | A row of app icons above Notification Center. Tap one to show only that app. |
+| **Palette** | Velvet by NoisyFlake & HiMyNameisUbik | Notification cards take on a soft version of their app's color. |
+| **Colored Albums** | ColorFlow by David Goldman | The music card and the island's sound bars take on the album art's color. |
 
-## Using it
+Each one is re-created from scratch for Folio, with no tweak code in it, and a package only switches on something
+Folio can already do. Every tweak is also in Folio's own Settings, so nothing here is locked behind the source.
 
-1. **Use this template** to make your own repository, then clone it.
-2. **Make a key.** It never goes in the repository:
-
-   ```bash
-   openssl ecparam -name prime256v1 -genkey -noout -out folio-source.pem
-   ```
-
-   Keep that file somewhere safe — a password manager is fine. If you lose it, everyone who added your source has to
-   confirm a new key before they get another update.
-
-3. **Add it as a secret.** In the repository: *Settings › Secrets and variables › Actions › New repository secret*,
-   named `FOLIO_SOURCE_KEY`, with the whole PEM file pasted in, `-----BEGIN` line and all.
-4. **Turn on Pages.** *Settings › Pages › Build and deployment › Source: GitHub Actions.*
-5. **Edit `source.json`** — your source's name, its description and where people should report problems.
-6. **Write a package.** Copy one of the folders in `packages/`, change `id`, `name` and `author` in its
-   `manifest.json`, and put its icon in `assets/icons/`.
-7. **Build it yourself before pushing:**
-
-   ```bash
-   python3 tools/build.py --key folio-source.pem
-   ```
-
-8. **Push.** The Action builds, signs and publishes. Your source is then
-   `https://<you>.github.io/<repository>/`, which is what people paste into Folio under *Market › Sources › Add*.
-
-The first time someone adds it, Folio shows them your key's fingerprint and remembers it. After that a source signed
-with a different key stops working until they agree to the change, so the key matters more than the repository does.
-
-## Listing an app
-
-Some things have to be apps of their own: Android will only take a keyboard as its own app, for instance. A package
-whose `manifest.json` has `"kind": ["externalApp"]` isn't packed. Its `via` list says where people can get it (Play,
-F-Droid or Obtainium), and an `app.json` beside the manifest lets Folio install the APK itself, for anyone who has
-turned that on:
-
-```json
-{ "url": "https://github.com/you/your-app/releases/download/v1.0.0/YourApp-1.0.0.apk",
-  "sha256": "…", "size": 1234567 }
-```
-
-Take the checksum and size from the release, never type them. Folio refuses an APK whose bytes don't match, and
-Android asks before installing anything, but nothing checks the app itself: your source is what vouches for it.
-
-## What gets built
-
-`tools/build.py` turns this folder into `_site/`, which is the source as a phone sees it:
+## How it's built
 
 ```
-_site/index.json          the list, generated from your packages so it can't disagree with them
-_site/entry.json          the signed pointer to the list: its sha256, its size, and when it expires
-_site/entry.json.sig      the signature, over entry.json's exact bytes
-_site/key.pub             your public key, so a phone can pin it
-_site/packages/*.foliopkg one zip per package
-_site/assets/             the pictures your packages name
+packages/<name>/    manifest.json, depiction.json and tweaks.json for one tweak
+assets/             the source's icon and each tweak's icon
+source.json         the source's name, description and featured package
+tools/build.py      packs the packages, builds the index and signs it
 ```
 
-The build then runs the validator over what it produced, and fails if anything is wrong. You can run that yourself
-against a folder, a single package or a `.foliopkg`:
+Every push to `main` builds the site, signs it with the key in the `FOLIO_SOURCE_KEY` secret and publishes it to
+<https://mccal-codes.github.io/folio-tweaks/>. Without the key the workflow publishes nothing, because Folio
+refuses an unsigned source.
 
-```bash
-python3 tools/folio-pkg.py validate _site
-python3 tools/folio-pkg.py validate packages/midnight
-```
-
-## What a package may contain
-
-Data, and nothing that runs: JSON and pictures. A theme carries `theme.json`, a bundle carries `tweaks.json` naming
-tweaks Folio already has, a layout carries `layout.json`. That is the whole reason a Folio source is safe to add
-without reading the code — there is no code. The full format is in Folio's
-[SDK documentation](https://github.com/McCal-Codes/folio/tree/main/docs/sdk).
-
-`schema/v1/` is a copy of Folio's schemas so this repository can check itself with nothing installed. Refresh it from
-the Folio repository when the format moves on.
-
-## Keeping a package honest
-
-- **Credit anything you were inspired by**, and don't include GPL code.
-- **Name every permission** your package uses; the privacy label people see is built from that list.
-- **Pictures are downloaded before anything is installed**, so keep them small — the validator warns past 1 MB.
-- **Revoking a package:** add its id to `revoked.json` and push. Phones that already have it will turn it off.
-
-## Licence
-
-The template is MIT. Your packages are yours; say what they are in each `manifest.json`.
+Problems with a tweak: [open an issue](https://github.com/McCal-Codes/folio-tweaks/issues). Community themes and
+other packages go to [folio-packages](https://github.com/McCal-Codes/folio-packages).
