@@ -1,0 +1,32 @@
+{
+  "$schema": "https://folio.mccal.dev/schema/v1/manifest.schema.json",
+  "format": 1,
+  "id": "com.mccal.folio.effect.stack",
+  "name": "Stack",
+  "version": "1.0.0",
+  "author": {
+    "name": "Folio",
+    "url": "https://github.com/McCal-Codes/folio"
+  },
+  "minFolio": "0.6.8",
+  "section": "tweaks",
+  "kind": [
+    "pageEffect"
+  ],
+  "permissions": [
+    "home.appearance"
+  ],
+  "screens": [
+    "cover",
+    "inner"
+  ],
+  "icon": "assets/icons/effect-stack.png",
+  "depiction": "depiction.json",
+  "license": "MIT",
+  "description": "Home pages step back as they leave, without turning.",
+  "requires": {
+    "features": [
+      "tweaks.pageEffects"
+    ]
+  }
+}

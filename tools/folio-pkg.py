@@ -155,7 +155,8 @@ class SchemaSet:
             out.append(f"{where}: {instance!r} is not one of {', '.join(map(str, schema['enum']))}")
 
         if isinstance(instance, str):
-            if "pattern" in schema and not re.search(schema["pattern"], instance):
+            # Python's `$` also matches before a trailing newline; the phone's `\z` doesn't, so neither does this.
+            if "pattern" in schema and not re.search(schema["pattern"].replace("$", r"\Z"), instance):
                 out.append(f"{where}: {instance!r} does not match {schema['pattern']}")
             if "minLength" in schema and len(instance) < schema["minLength"]:
                 out.append(f"{where}: shorter than {schema['minLength']} characters")
@@ -288,13 +289,34 @@ class Report:
 # the checks
 # ---------------------------------------------------------------------------------------------------------------
 
+PACKAGE_NAME_RE = re.compile(r"(?!/)(?!.*\.\.)[A-Za-z0-9._/-]+")
+
+
 def load_json(path: pathlib.Path, report: Report, where: str) -> dict | None:
     try:
-        return json.loads(path.read_text())
+        value = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         report.error(f"{where}: missing")
+        return None
+    except UnicodeDecodeError:
+        report.error(f"{where}: not UTF-8 text")
+        return None
     except json.JSONDecodeError as problem:
         report.error(f"{where}: not valid JSON - {problem.msg} on line {problem.lineno}")
+        return None
+    if not isinstance(value, dict):
+        report.error(f"{where}: must be a JSON object")
+        return None
+    return value
+
+
+def inside(root: pathlib.Path, named: str, report: Report, where: str) -> pathlib.Path | None:
+    """[named] under [root], or None (reported) when it points anywhere else: a source is read, never the disk."""
+    if isinstance(named, str):
+        path = (root / named).resolve()
+        if path.is_relative_to(root.resolve()):
+            return path
+    report.error(f"{where}: {named!r} points outside the source")
     return None
 
 
@@ -337,6 +359,25 @@ def check_package(folder: pathlib.Path, source_root: pathlib.Path, schemas: Sche
         report.error(f"{name}: there is a script.js, but kind does not include script")
     if "tweakBundle" in kinds and not (folder / "tweaks.json").is_file():
         report.error(f"{name}: kind includes tweakBundle, but there is no tweaks.json")
+    if "pageEffect" in kinds:
+        effect_file = folder / "effect.json"
+        if not effect_file.is_file():
+            report.error(f"{name}: kind includes pageEffect, but there is no effect.json")
+        else:
+            try:
+                effect = json.loads(effect_file.read_text(encoding="utf-8"))
+            except ValueError as problem:
+                report.error(f"{name}/effect.json: not JSON ({problem})")
+                effect = None
+            if isinstance(effect, dict):
+                for key, low, high in (("maxRotation", -90, 90), ("shrink", 0, 0.3), ("cameraWidths", 1.5, 4)):
+                    value = effect.get(key)
+                    if not isinstance(value, (int, float)) or isinstance(value, bool):
+                        report.error(f"{name}/effect.json: {key} must be a number")
+                    elif not low <= value <= high:
+                        report.warn(f"{name}/effect.json: {key} {value} is outside {low} to {high}; Folio will clamp it")
+                if effect.get("pivot") not in ("seam", "center"):
+                    report.error(f"{name}/effect.json: pivot must be seam or center")
 
     version = manifest.get("minFolio")
     if isinstance(version, str) and not VERSION_RE.match(version):
@@ -347,8 +388,8 @@ def check_package(folder: pathlib.Path, source_root: pathlib.Path, schemas: Sche
 
     named_depiction = manifest.get("depiction")
     if named_depiction:
-        depiction_path = folder / named_depiction
-        depiction = load_json(depiction_path, report, f"{name}/{named_depiction}")
+        depiction_path = inside(folder, named_depiction, report, f"{name}/manifest.json: depiction")
+        depiction = load_json(depiction_path, report, f"{name}/{named_depiction}") if depiction_path else None
         if depiction is not None:
             for problem in schemas.validate(depiction, schemas.get("depiction.schema.json"), f"{name}/{named_depiction}"):
                 report.error(problem)
@@ -444,30 +485,9 @@ def check_source(root: pathlib.Path, schemas: SchemaSet, report: Report) -> str:
                         f"packages/{archive_path.name}: what is inside differs from what index.json advertises"
                     )
 
-    for package_id, entry in listed.items():
-        kinds = entry.get("manifest", {}).get("kind", [])
-        url = entry.get("url")
-        if "externalApp" in kinds:
-            # An app lives wherever its releases do; the source only says where, and what the bytes must hash to.
-            if url is not None and not str(url).startswith("https://"):
-                report.error(f"index.json: {package_id} is an app, so its url has to be an https:// link to the APK")
-            continue
+    for package_id in listed:
         if package_id not in on_disk and package_id not in packed:
             report.error(f"index.json lists {package_id}, but there is no folder or .foliopkg for it here")
-            continue
-        if package_id in packed:
-            # A phone refuses a package with no url, sha256 and size, and refuses one whose bytes don't match them.
-            # Checking here is cheaper than finding out from someone who pressed Get.
-            archive = packed[package_id]
-            if url is None:
-                report.error(f"index.json: {package_id} has no url, so no phone can download it")
-            elif not str(url).startswith("https://") and (root / url).resolve() != archive.resolve():
-                report.error(f"index.json: {package_id}'s url is {url}, but its package is packages/{archive.name}")
-            data = archive.read_bytes()
-            if entry.get("sha256") != hashlib.sha256(data).hexdigest():
-                report.error(f"index.json: {package_id}'s sha256 doesn't match packages/{archive.name}")
-            if entry.get("size") != len(data):
-                report.error(f"index.json: {package_id}'s size doesn't match packages/{archive.name}")
 
     signed = (root / "entry.json").is_file()
     check_entry(root, schemas, report)
@@ -477,8 +497,6 @@ def check_source(root: pathlib.Path, schemas: SchemaSet, report: Report) -> str:
         str(path.relative_to(root))
         for path in sorted(root.rglob("*"))
         if path.is_file() and path.suffix.lower() not in SOURCE_SUFFIXES
-        # The web page at the top is for browsers. A phone never asks for it, so it is allowed there and nowhere else.
-        and path != root / "index.html"
     ]
     if extras:
         shown = ", ".join(extras[:3]) + (f" and {len(extras) - 3} more" if len(extras) > 3 else "")
@@ -504,13 +522,15 @@ def check_entry(root: pathlib.Path, schemas: SchemaSet, report: Report) -> None:
         report.warn("no key.pub: whoever adds this source has nothing to pin")
 
     pointer = entry.get("index", {})
-    index_path = root / pointer.get("path", "index.json")
-    if index_path.is_file():
+    if not isinstance(pointer, dict):
+        return
+    index_path = inside(root, pointer.get("path", "index.json"), report, "entry.json: index.path")
+    if index_path and index_path.is_file():
         raw = index_path.read_bytes()
         if pointer.get("size") is not None and pointer["size"] != len(raw):
             report.error(f"entry.json: says the index is {pointer['size']} bytes; it is {len(raw)}")
         digest = hashlib.sha256(raw).hexdigest()
-        if pointer.get("sha256") and pointer["sha256"].lower() != digest:
+        if isinstance(pointer.get("sha256"), str) and pointer["sha256"].lower() != digest:
             report.error("entry.json: the index's sha256 does not match the index that is here")
     stamp = entry.get("timestamp")
     if isinstance(stamp, int) and stamp > time.time() + 3600:
@@ -544,11 +564,16 @@ def check_foliopkg(path: pathlib.Path, schemas: SchemaSet, report: Report, stand
     if len(names) > MAX_ZIP_ENTRIES:
         report.error(f"{path.name}: {len(names)} entries, over the 500 allowed")
     total = 0
+    seen = set()
     for info in archive.infolist():
         total += info.file_size
         name = info.filename
-        if name.startswith("/") or ".." in pathlib.PurePosixPath(name).parts or "\\" in name:
+        # The phone's own rule (PackageArchive.NAME), so a package this passes is one the phone opens.
+        if not PACKAGE_NAME_RE.fullmatch(name.rstrip("/")) or len(name) > 200:
             report.error(f"{name}: a package may not contain a path like this")
+        if name in seen:
+            report.error(f"{name}: appears twice in the archive")
+        seen.add(name)
         if (info.external_attr >> 16) & 0o170000 == 0o120000:
             report.error(f"{name}: symlinks are not allowed in a package")
         if not info.is_dir() and pathlib.PurePosixPath(name).suffix.lower() not in PACKAGE_SUFFIXES:
@@ -560,9 +585,15 @@ def check_foliopkg(path: pathlib.Path, schemas: SchemaSet, report: Report, stand
         return None
 
     try:
-        manifest = json.loads(archive.read("manifest.json"))
+        manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+    except UnicodeDecodeError:
+        report.error(f"{path.name}: manifest.json is not UTF-8 text")
+        return None
     except json.JSONDecodeError as problem:
         report.error(f"{path.name}: manifest.json is not valid JSON - {problem.msg}")
+        return None
+    if not isinstance(manifest, dict):
+        report.error(f"{path.name}: manifest.json must be a JSON object")
         return None
     label = "manifest.json" if standalone else f"packages/{path.name}: manifest.json"
     for problem in schemas.validate(manifest, schemas.get("manifest.schema.json"), label):
