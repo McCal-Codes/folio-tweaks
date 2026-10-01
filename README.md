@@ -10,14 +10,14 @@ Folio includes this source from the start, so nobody has to add it by hand.
 | **Roll Call** | Axon by Nepeta | A row of app icons above Notification Center. Tap one to show only that app. |
 | **Palette** | Velvet by NoisyFlake & HiMyNameisUbik | Notification cards take on a soft version of their app's color. |
 | **Colored Albums** | ColorFlow by David Goldman | The music card and the island's sound bars take on the album art's color. |
-| **Tilt** | Barrel by Aaron Ash | A page effect: Home pages lean a little as they pass, turning through their middle. |
-| **Stack** | Barrel by Aaron Ash | A page effect: Home pages step back as they leave, without turning. |
-| **Cylinder** | Barrel by Aaron Ash | A page effect: Home pages turn around their middle, like the sides of a drum. |
+| **Tilt** | Barrel by Aaron Ash | A page effect for Flipbook: Home pages lean a little as they pass, turning through their middle. |
 
 Each one is re-created from scratch for Folio, with no tweak code in it, and a package only switches on something
 Folio can already do. Every tweak is also in Folio's own Settings, so nothing here is locked behind the source. The
-page effects are the exception: each is four numbers (`effect.json`) that Folio's own page engine draws, and
-installing one adds it to Settings › Gestures › Page Effects beside Cube and Carousel.
+page effect is the exception: Tilt is four numbers (`effect.json`) that Folio's own page engine draws, and installing
+it adds it to Flipbook's page in Settings, under From Packages. Folio's own effects (Cube, Inside Cube, Carousel and
+Stack) are built into Flipbook, the way Cylinder bundles its own; Tilt stays here as the example of an effect package,
+the same one the SDK documents.
 
 ## How it's built
 
