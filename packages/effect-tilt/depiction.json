@@ -1,0 +1,46 @@
+{
+  "$schema": "https://folio.mccal.dev/schema/v1/depiction.schema.json",
+  "format": 1,
+  "tint": "#5E5CE6",
+  "blocks": [
+    {
+      "type": "markdown",
+      "text": "Swipe between Home pages and each one leans a little as it passes, turning through its middle and stepping back slightly. It's the calmest of the page effects: labels stay easy to read all the way through a swipe.\n\nInstall it, then choose it in Settings › Gestures › Page Effects. Pages slide flat while you move an app or resize a widget, and Reduce Motion turns every page effect off. Removing the package puts back the built-in effect you had.\n\nInspired by Barrel by Aaron Ash. Re-created from scratch for Folio; no tweak code is included."
+    },
+    {
+      "type": "featureList",
+      "items": [
+        "Pages turn 18° at a full page out",
+        "Pages step back to 92% of their size",
+        "Turns through the middle of the page",
+        "Off with Reduce Motion"
+      ]
+    },
+    {
+      "type": "compatibility",
+      "screens": [
+        "cover",
+        "inner"
+      ]
+    },
+    {
+      "type": "changelog",
+      "entries": [
+        {
+          "version": "1.0.0",
+          "date": "2026-09-29",
+          "notes": "Tilt arrives in the Folio Market. Needs Folio 0.6.8."
+        }
+      ]
+    },
+    {
+      "type": "link",
+      "title": "Folio on GitHub",
+      "url": "https://github.com/McCal-Codes/folio"
+    },
+    {
+      "type": "donation",
+      "url": "https://ko-fi.com/mccal"
+    }
+  ]
+}
