@@ -9,7 +9,7 @@ Folio includes this source from the start, so nobody has to add it by hand.
 | **Harborline** | Harbor by Evan Swick | Dock icons swell under your finger as you slide along the dock. |
 | **Roll Call** | Axon by Nepeta | A row of app icons above Notification Center. Tap one to show only that app. |
 | **Palette** | Velvet by NoisyFlake & HiMyNameisUbik | Notification cards take on a soft version of their app's color. |
-| **Colored Albums** | ColorFlow by David Goldman | The music card and the island's sound bars take on the album art's color. |
+| **Afterglow** (was Colored Albums) | ColorFlow by David Goldman | The music card and the island's sound bars take on the album art's color. |
 | **Tilt** | Barrel by Aaron Ash | A page effect for Flipbook: Home pages lean a little as they pass, turning through their middle. |
 
 Each one is re-created from scratch for Folio, with no tweak code in it, and a package only switches on something
