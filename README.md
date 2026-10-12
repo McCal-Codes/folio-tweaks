@@ -25,6 +25,7 @@ the same one the SDK documents.
 packages/<name>/    manifest.json, depiction.json and tweaks.json (effect.json for a page effect) for one tweak
 assets/             the source's icon and each tweak's icon
 source.json         the source's name, description and featured package
+revoked.json        versions this source pulls, or marks broken on some Folio releases; signed with the index
 tools/build.py      packs the packages, builds the index and signs it
 ```
 
