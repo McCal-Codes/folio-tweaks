@@ -7,7 +7,8 @@
 
 It reads `source.json` and every folder under `packages/`, then writes `_site/`:
 
-    _site/index.json          the list, built from the packages so it can never disagree with them
+    _site/index.json          the list, built from the packages so it can never disagree with them; with a key, each
+                              package in it carries `signedBy`, the author signature Folio pins to its id
     _site/entry.json          the signed pointer to the list, with its sha256 and size
     _site/entry.json.sig      the signature, base64 DER, over entry.json's exact bytes
     _site/key.pub             the public key, so a phone can pin it the first time
@@ -21,6 +22,11 @@ at a file you keep elsewhere. Everything else about a source is public by design
 Signing follows Folio's ADR 0002: ECDSA P-256 with SHA-256, signatures base64 DER, the key published as base64 SPKI,
 and `keyId` the first eight bytes of the key's SHA-256. The work is done with openssl, which is on every runner and
 every Mac, so this script needs nothing installed.
+
+The same key also signs each package as its author (docs/sdk/format-v1.md, "Who wrote it"): Folio is both the author
+of these tweaks and the source handing them out. The signature covers `folio-pkg:<id>:<version>:<sha256>`, so it
+can't be moved to another package, another version or other bytes, and Folio pins the key to each id the first time
+it installs a signed copy. An unsigned build has no `signedBy` anywhere.
 """
 
 from __future__ import annotations
@@ -129,7 +135,17 @@ def app_download(folder: pathlib.Path) -> dict | None:
     return {"url": app["url"], "sha256": app["sha256"].lower(), "size": int(app["size"])}
 
 
-def build_index(source: dict, packages: list[dict]) -> dict:
+def author_signature(key: pathlib.Path, package_id: str, version: str, sha256: str) -> dict:
+    """`signedBy` for one package: the key, and its signature over the package's id and version bound to its bytes."""
+    import base64
+
+    payload = f"folio-pkg:{package_id}:{version}:{sha256}".encode()
+    der = openssl(["dgst", "-sha256", "-sign", str(key)], stdin=payload)
+    spki, _ = public_key(key)
+    return {"key": spki, "signature": base64.b64encode(der).decode()}
+
+
+def build_index(source: dict, packages: list[dict], key: pathlib.Path | None = None) -> dict:
     """The index is generated, never hand-written, so it cannot drift from the packages it lists."""
     index = {
         "$schema": "https://folio.mccal.dev/schema/v1/index.schema.json",
@@ -149,6 +165,9 @@ def build_index(source: dict, packages: list[dict]) -> dict:
         if download:
             entry.update(download)
         entry["manifest"] = {k: v for k, v in manifest.items() if k != "$schema"}
+        # Only a .foliopkg: an app's checksum is its APK's, which Android checks against the app's own signature.
+        if key and download and not is_app(manifest):
+            entry["signedBy"] = author_signature(key, manifest["id"], manifest["version"], download["sha256"])
         index["packages"].append(entry)
     return index
 
@@ -378,12 +397,12 @@ def main() -> int:
     if (ROOT / "revoked.json").is_file():
         shutil.copy(ROOT / "revoked.json", SITE / "revoked.json")
 
-    index = build_index(source, manifests)
+    key = read_key(args)
+    index = build_index(source, manifests, key)
     index_bytes = (json.dumps(index, indent=2) + "\n").encode()
     (SITE / "index.json").write_bytes(index_bytes)
 
     fingerprint = None
-    key = read_key(args)
     if key:
         spki, key_id = public_key(key)
         import base64
