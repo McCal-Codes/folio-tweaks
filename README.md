@@ -1,7 +1,7 @@
 # Folio Community Tweaks
 
 The jailbreak-inspired tweaks for [Folio](https://github.com/McCal-Codes/folio), published as a signed source.
-Folio includes this source from the start, so nobody has to add it by hand.
+Add it in Folio's Market under Sources. Folio recognizes it as its own source once it's added, but doesn't add it by itself yet.
 
 | Tweak | Inspired by | What it does |
 |---|---|---|
