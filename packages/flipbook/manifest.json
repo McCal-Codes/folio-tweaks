@@ -1,0 +1,32 @@
+{
+  "$schema": "https://folio.mccal.dev/schema/v1/manifest.schema.json",
+  "format": 1,
+  "id": "com.mccal.folio.flipbook",
+  "name": "Flipbook",
+  "version": "1.0.1",
+  "author": {
+    "name": "Folio",
+    "url": "https://github.com/McCal-Codes/folio"
+  },
+  "minFolio": "0.7.0",
+  "section": "tweaks",
+  "kind": [
+    "tweakBundle"
+  ],
+  "permissions": [
+    "tweaks"
+  ],
+  "screens": [
+    "cover",
+    "inner"
+  ],
+  "icon": "assets/icon.png",
+  "depiction": "depiction.json",
+  "license": "MIT",
+  "description": "Choose how Home pages turn as you swipe, with effects that respect Reduce Motion and editing gestures.",
+  "requires": {
+    "features": [
+      "tweaks.pageEffects"
+    ]
+  }
+}
