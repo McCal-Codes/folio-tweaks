@@ -1,0 +1,52 @@
+{
+  "$schema": "https://folio.mccal.dev/schema/v1/depiction.schema.json",
+  "format": 1,
+  "tint": "#30B0C7",
+  "blocks": [
+    {
+      "type": "markdown",
+      "text": "Flipbook changes the way Home pages move while you swipe: Cube, Inside Cube, Carousel and Stack are built into Folio. You choose the look in Settings › Tweaks › Flipbook. Additional effects, including Tilt, can be installed independently from this source.\n\nWhile you drag an app or resize a widget, pages move normally. Reduce Motion disables the 3D effects. Removing this package does not delete your Home layout.\n\nInspired by Barrel by Aaron Ash and Cylinder by Reed Weichler. Re-created from scratch for Folio; none of their tweak code is included."
+    },
+    {
+      "type": "featureList",
+      "items": [
+        "Cube, Inside Cube, Carousel and Stack",
+        "Optional add-on effects such as Tilt",
+        "Normal page movement during editing",
+        "Respects Reduce Motion"
+      ]
+    },
+    {
+      "type": "compatibility",
+      "screens": [
+        "cover",
+        "inner"
+      ],
+      "notes": "Requires Folio 0.7.0 or newer for this independently updated package. The effect renderer itself ships with Folio."
+    },
+    {
+      "type": "changelog",
+      "entries": [
+        {
+          "version": "1.0.1",
+          "date": "2026-10-21",
+          "notes": "Flipbook enters the Folio Community Tweaks source as a separately updateable package. The effect renderer and built-in styles are unchanged."
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-09-26",
+          "notes": "Flipbook shipped in Folio's built-in Market source."
+        }
+      ]
+    },
+    {
+      "type": "link",
+      "title": "Folio Community Tweaks on GitHub",
+      "url": "https://github.com/McCal-Codes/folio-tweaks"
+    },
+    {
+      "type": "donation",
+      "url": "https://ko-fi.com/mccal"
+    }
+  ]
+}
